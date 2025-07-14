@@ -15,12 +15,14 @@ module.exports = async (req, res) => {
       return res.status(500).json({ error: 'Configuration error' });
     }
 
-    // Extract data from Mailparser
+    // --- CORRECTED SECTION ---
+    // Extract data from Mailparser, renaming the keys to match your script's variables.
+    // Mailparser sends 'business_name_subject' and 'email_address_main_address'.
     const {
       pool_id,
-      business_name,
+      business_name_subject: business_name,
       full_name,
-      email
+      email_address_main_address: email
     } = req.body;
 
     console.log('Received signup:', { pool_id, business_name, full_name, email });
@@ -145,6 +147,7 @@ module.exports = async (req, res) => {
         { headers }
       );
     } catch (assocError) {
+      // It's okay if this fails, the association might already exist.
       console.log('Association might already exist:', assocError.message);
     }
 
