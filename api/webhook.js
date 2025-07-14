@@ -54,7 +54,7 @@ console.log('HUBSPOT TOKEN VALUE:', process.env.HUBSPOT_ACCESS_TOKEN ? 'Token ex
     lastname: lastname,
     company: business_name,
     pool_id__phil_only_: pool_id,
-    source__latest_: 'Lite Sign Up'
+    source__latest_: 'Lite Sign up'
   }
 };
 
