@@ -4,7 +4,9 @@ const axios = require('axios');
 module.exports = async (req, res) => {
   // --- DEBUGGING LINE ---
   // This will show us all the environment variables the function can see.
-  console.log('Available Environment Keys:', Object.keys(process.env));
+console.log('Available Environment Keys:', Object.keys(process.env));
+console.log('HUBSPOT TOKEN VALUE:', process.env.HUBSPOT_ACCESS_TOKEN ? 'Token exists ✅' : 'Token MISSING ❌');
+
   // --- END DEBUGGING LINE ---
 
   // Only accept POST requests
@@ -174,4 +176,5 @@ module.exports = async (req, res) => {
       details: error.response?.data
     });
   }
+  
 };
