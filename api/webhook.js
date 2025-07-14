@@ -1,0 +1,171 @@
+const axios = require('axios');
+
+module.exports = async (req, res) => {
+  // Only accept POST requests
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  try {
+    // Get HubSpot token from environment variable
+    const HUBSPOT_TOKEN = process.env.HUBSPOT_ACCESS_TOKEN;
+    
+    if (!HUBSPOT_TOKEN) {
+      console.error('Missing HubSpot access token');
+      return res.status(500).json({ error: 'Configuration error' });
+    }
+
+    // Extract data from Mailparser
+    const {
+      pool_id,
+      business_name,
+      full_name,
+      email
+    } = req.body;
+
+    console.log('Received signup:', { pool_id, business_name, full_name, email });
+
+    // Validate required fields
+    if (!email || !full_name || !business_name || !pool_id) {
+      return res.status(400).json({ 
+        error: 'Missing required fields',
+        received: { pool_id, business_name, full_name, email }
+      });
+    }
+
+    // Split name into first and last
+    const nameParts = full_name.trim().split(' ');
+    const firstname = nameParts[0];
+    const lastname = nameParts.slice(1).join(' ') || '';
+
+    // Step 1: Create or update contact
+    const contactData = {
+      properties: {
+        email: email,
+        firstname: firstname,
+        lastname: lastname,
+        company: business_name,
+        pool_id: pool_id,
+        lead_source: 'Free Tier Signup'
+      }
+    };
+
+    // Search for existing contact
+    const searchUrl = 'https://api.hubapi.com/crm/v3/objects/contacts/search';
+    const headers = {
+      'Authorization': `Bearer ${HUBSPOT_TOKEN}`,
+      'Content-Type': 'application/json'
+    };
+
+    const searchResponse = await axios.post(searchUrl, {
+      filterGroups: [{
+        filters: [{
+          propertyName: 'email',
+          operator: 'EQ',
+          value: email
+        }]
+      }]
+    }, { headers });
+
+    let contactId;
+    let contactAction;
+
+    if (searchResponse.data.results.length > 0) {
+      // Update existing contact
+      contactId = searchResponse.data.results[0].id;
+      await axios.patch(
+        `https://api.hubapi.com/crm/v3/objects/contacts/${contactId}`,
+        contactData,
+        { headers }
+      );
+      contactAction = 'updated';
+    } else {
+      // Create new contact
+      const createResponse = await axios.post(
+        'https://api.hubapi.com/crm/v3/objects/contacts',
+        contactData,
+        { headers }
+      );
+      contactId = createResponse.data.id;
+      contactAction = 'created';
+    }
+
+    // Step 2: Create or update company
+    const companyData = {
+      properties: {
+        name: business_name,
+        pool_id: pool_id,
+        domain: email.split('@')[1]
+      }
+    };
+
+    // Search for existing company
+    const companySearchResponse = await axios.post(
+      'https://api.hubapi.com/crm/v3/objects/companies/search',
+      {
+        filterGroups: [{
+          filters: [{
+            propertyName: 'name',
+            operator: 'EQ',
+            value: business_name
+          }]
+        }]
+      },
+      { headers }
+    );
+
+    let companyId;
+    let companyAction;
+
+    if (companySearchResponse.data.results.length > 0) {
+      // Update existing company
+      companyId = companySearchResponse.data.results[0].id;
+      await axios.patch(
+        `https://api.hubapi.com/crm/v3/objects/companies/${companyId}`,
+        companyData,
+        { headers }
+      );
+      companyAction = 'updated';
+    } else {
+      // Create new company
+      const createCompanyResponse = await axios.post(
+        'https://api.hubapi.com/crm/v3/objects/companies',
+        companyData,
+        { headers }
+      );
+      companyId = createCompanyResponse.data.id;
+      companyAction = 'created';
+    }
+
+    // Step 3: Associate contact with company
+    try {
+      await axios.put(
+        `https://api.hubapi.com/crm/v3/objects/contacts/${contactId}/associations/companies/${companyId}/contact_to_company`,
+        {},
+        { headers }
+      );
+    } catch (assocError) {
+      console.log('Association might already exist:', assocError.message);
+    }
+
+    // Success response
+    res.status(200).json({
+      success: true,
+      message: `Contact ${contactAction} and company ${companyAction}`,
+      data: {
+        contactId,
+        companyId,
+        pool_id,
+        email
+      }
+    });
+
+  } catch (error) {
+    console.error('Webhook error:', error.response?.data || error.message);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      details: error.response?.data
+    });
+  }
+};
