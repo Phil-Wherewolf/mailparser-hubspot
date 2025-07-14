@@ -1,7 +1,12 @@
-// forcing new deployment2
+// Forcing a new deployment to read env variables
 const axios = require('axios');
 
 module.exports = async (req, res) => {
+  // --- NEW DEBUGGING LINE ---
+  // This will show us all the environment variables the function can see.
+  console.log('Available Environment Keys:', Object.keys(process.env));
+  // --- END DEBUGGING LINE ---
+
   // Only accept POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -16,9 +21,7 @@ module.exports = async (req, res) => {
       return res.status(500).json({ error: 'Configuration error' });
     }
 
-    // --- CORRECTED SECTION ---
     // Extract data from Mailparser, renaming the keys to match your script's variables.
-    // Mailparser sends 'business_name_subject' and 'email_address_main_address'.
     const {
       pool_id,
       business_name_subject: business_name,
