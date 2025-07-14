@@ -2,7 +2,7 @@
 const axios = require('axios');
 
 module.exports = async (req, res) => {
-  // --- NEW DEBUGGING LINE ---
+  // --- DEBUGGING LINE ---
   // This will show us all the environment variables the function can see.
   console.log('Available Environment Keys:', Object.keys(process.env));
   // --- END DEBUGGING LINE ---
@@ -21,7 +21,7 @@ module.exports = async (req, res) => {
       return res.status(500).json({ error: 'Configuration error' });
     }
 
-    // Extract data from Mailparser, renaming the keys to match your script's variables.
+    // Extract data from Mailparser
     const {
       pool_id,
       business_name_subject: business_name,
@@ -151,7 +151,6 @@ module.exports = async (req, res) => {
         { headers }
       );
     } catch (assocError) {
-      // It's okay if this fails, the association might already exist.
       console.log('Association might already exist:', assocError.message);
     }
 
