@@ -48,15 +48,15 @@ console.log('HUBSPOT TOKEN VALUE:', process.env.HUBSPOT_ACCESS_TOKEN ? 'Token ex
 
     // Step 1: Create or update contact
     const contactData = {
-      properties: {
-        email: email,
-        firstname: firstname,
-        lastname: lastname,
-        company: business_name,
-        pool_id: pool_id,
-        lead_source: 'Free Tier Signup'
-      }
-    };
+  properties: {
+    email: email,
+    firstname: firstname,
+    lastname: lastname,
+    company: business_name,
+    pool_id__phil_only_: pool_id,
+    source__latest_: 'Lite Sign Up'
+  }
+};
 
     // Search for existing contact
     const searchUrl = 'https://api.hubapi.com/crm/v3/objects/contacts/search';
@@ -98,71 +98,12 @@ console.log('HUBSPOT TOKEN VALUE:', process.env.HUBSPOT_ACCESS_TOKEN ? 'Token ex
       contactAction = 'created';
     }
 
-    // Step 2: Create or update company
-    const companyData = {
-      properties: {
-        name: business_name,
-        pool_id: pool_id,
-        domain: email.split('@')[1]
-      }
-    };
-
-    // Search for existing company
-    const companySearchResponse = await axios.post(
-      'https://api.hubapi.com/crm/v3/objects/companies/search',
-      {
-        filterGroups: [{
-          filters: [{
-            propertyName: 'name',
-            operator: 'EQ',
-            value: business_name
-          }]
-        }]
-      },
-      { headers }
-    );
-
-    let companyId;
-    let companyAction;
-
-    if (companySearchResponse.data.results.length > 0) {
-      // Update existing company
-      companyId = companySearchResponse.data.results[0].id;
-      await axios.patch(
-        `https://api.hubapi.com/crm/v3/objects/companies/${companyId}`,
-        companyData,
-        { headers }
-      );
-      companyAction = 'updated';
-    } else {
-      // Create new company
-      const createCompanyResponse = await axios.post(
-        'https://api.hubapi.com/crm/v3/objects/companies',
-        companyData,
-        { headers }
-      );
-      companyId = createCompanyResponse.data.id;
-      companyAction = 'created';
-    }
-
-    // Step 3: Associate contact with company
-    try {
-      await axios.put(
-        `https://api.hubapi.com/crm/v3/objects/contacts/${contactId}/associations/companies/${companyId}/contact_to_company`,
-        {},
-        { headers }
-      );
-    } catch (assocError) {
-      console.log('Association might already exist:', assocError.message);
-    }
-
     // Success response
     res.status(200).json({
       success: true,
       message: `Contact ${contactAction} and company ${companyAction}`,
       data: {
         contactId,
-        companyId,
         pool_id,
         email
       }
