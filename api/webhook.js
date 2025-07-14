@@ -1,14 +1,6 @@
-// Forcing a new deployment to read env variables
 const axios = require('axios');
 
 module.exports = async (req, res) => {
-  // --- DEBUGGING LINE ---
-  // This will show us all the environment variables the function can see.
-console.log('Available Environment Keys:', Object.keys(process.env));
-console.log('HUBSPOT TOKEN VALUE:', process.env.HUBSPOT_ACCESS_TOKEN ? 'Token exists ✅' : 'Token MISSING ❌');
-
-  // --- END DEBUGGING LINE ---
-
   // Only accept POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -31,32 +23,22 @@ console.log('HUBSPOT TOKEN VALUE:', process.env.HUBSPOT_ACCESS_TOKEN ? 'Token ex
       email_address_main_address: email
     } = req.body;
 
-    console.log('Received signup:', { pool_id, business_name, full_name, email });
-
-    // Validate required fields
-    if (!email || !full_name || !business_name || !pool_id) {
-      return res.status(400).json({ 
-        error: 'Missing required fields',
-        received: { pool_id, business_name, full_name, email }
-      });
-    }
-
     // Split name into first and last
     const nameParts = full_name.trim().split(' ');
     const firstname = nameParts[0];
     const lastname = nameParts.slice(1).join(' ') || '';
 
-    // Step 1: Create or update contact
+    // The 'lead_source' value must exactly match an option in HubSpot.
     const contactData = {
-  properties: {
-    email: email,
-    firstname: firstname,
-    lastname: lastname,
-    company: business_name,
-    pool_id__phil_only_: pool_id,
-    source__latest_: 'Lite Sign up'
-  }
-};
+      properties: {
+        email: email,
+        firstname: firstname,
+        lastname: lastname,
+        company: business_name,
+        pool_id: pool_id,
+        lead_source: 'Lite Sign up' // Corrected value
+      }
+    };
 
     // Search for existing contact
     const searchUrl = 'https://api.hubapi.com/crm/v3/objects/contacts/search';
@@ -101,21 +83,16 @@ console.log('HUBSPOT TOKEN VALUE:', process.env.HUBSPOT_ACCESS_TOKEN ? 'Token ex
     // Success response
     res.status(200).json({
       success: true,
-      message: `Contact ${contactAction} and company ${companyAction}`,
-      data: {
-        contactId,
-        pool_id,
-        email
-      }
+      message: `Contact ${contactAction}`,
+      data: { contactId, pool_id, email }
     });
 
   } catch (error) {
     console.error('Webhook error:', error.response?.data || error.message);
     res.status(500).json({
       success: false,
-      error: error.message,
+      error: 'HubSpot API Error',
       details: error.response?.data
     });
   }
-  
 };
