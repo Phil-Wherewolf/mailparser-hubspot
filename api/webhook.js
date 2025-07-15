@@ -25,9 +25,9 @@ module.exports = async (req, res) => {
     // Extract data from Mailparser
     const {
       pool_id,
-      business_name_subject: business_name,
+      business_name,
       full_name,
-      email_address_main_address: email
+      email_address: email
     } = req.body;
 
     console.log('Received signup:', { pool_id, business_name, full_name, email });
