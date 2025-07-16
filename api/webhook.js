@@ -23,45 +23,44 @@ module.exports = async (req, res) => {
     }
 
     // Extract data from Mailparser
-    const {
-      pool_id,
-      business_name,
-      full_name,
-      email_address: email
-    } = req.body;
+const {
+  pool_id,
+  business_name,
+  full_name,
+  email_address: email,
+  phone = '',  // Added with default value
+  estimated_volume_of_guests_waivers_per_month = ''  // Added with default value
+} = req.body;
 
-    console.log('Received signup:', { pool_id, business_name, full_name, email });
+console.log('Received signup:', { pool_id, business_name, full_name, email, phone, estimated_volume_of_guests_waivers_per_month });
 
-    // Validate required fields
-    if (!email || !full_name || !business_name || !pool_id) {
-      return res.status(400).json({ 
-        error: 'Missing required fields',
-        received: { pool_id, business_name, full_name, email }
-      });
-    }
-
-    // Split name into first and last
-    const nameParts = full_name.trim().split(' ');
-    const firstname = nameParts[0];
-    const lastname = nameParts.slice(1).join(' ') || '';
-
-    // Step 1: Create or update contact
-    const contactData = {
-      properties: {
-        email: email,
-        firstname: firstname,
-        lastname: lastname,
-        company: business_name,
-        pool_id__phil_only_: pool_id,
-        estimated_volume_of_guests_waivers_per_month: '',
-        phone: phone || '',
-        source__latest_: 'Lite Sign up'
-      }
-    };
-// Add optional fields if they exist
-if (phone) {
-  contactData.properties.phone = phone;
+// Validate required fields
+if (!email || !full_name || !business_name || !pool_id) {
+  return res.status(400).json({
+    error: 'Missing required fields',
+    received: { pool_id, business_name, full_name, email }
+  });
 }
+
+// Split name into first and last
+const nameParts = full_name.trim().split(' ');
+const firstname = nameParts[0];
+const lastname = nameParts.slice(1).join(' ') || '';
+
+// Step 1: Create or update contact
+const contactData = {
+  properties: {
+    email: email,
+    firstname: firstname,
+    lastname: lastname,
+    company: business_name,
+    pool_id__phil_only_: pool_id,
+    phone: phone || '',
+    source__latest_: 'Lite Sign up'
+  }
+};
+
+// Add optional fields if they exist
 if (estimated_volume_of_guests_waivers_per_month) {
   contactData.properties.estimated_volume_of_guests___waivers_per_month = estimated_volume_of_guests_waivers_per_month;
 }
