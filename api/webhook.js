@@ -53,7 +53,7 @@ module.exports = async (req, res) => {
         lastname: lastname,
         company: business_name,
         pool_id__phil_only_: pool_id,
-        estimated_volume_of_guests_waivers_per_month = '',
+        estimated_volume_of_guests_waivers_per_month: '',
         phone: phone || '',
         source__latest_: 'Lite Sign up'
       }
