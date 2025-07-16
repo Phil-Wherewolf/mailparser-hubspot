@@ -53,12 +53,18 @@ module.exports = async (req, res) => {
         lastname: lastname,
         company: business_name,
         pool_id__phil_only_: pool_id,
-        estimated_volume_of_guests___waivers_per_month: estimated_volume_of_guests___waivers_per_month || ''  ,
+        estimated_volume_of_guests_waivers_per_month = '',
         phone: phone || '',
         source__latest_: 'Lite Sign up'
       }
     };
-
+// Add optional fields if they exist
+if (phone) {
+  contactData.properties.phone = phone;
+}
+if (estimated_volume_of_guests_waivers_per_month) {
+  contactData.properties.estimated_volume_of_guests___waivers_per_month = estimated_volume_of_guests_waivers_per_month;
+}
     // Search for existing contact
     const searchUrl = 'https://api.hubapi.com/crm/v3/objects/contacts/search';
     const headers = {
